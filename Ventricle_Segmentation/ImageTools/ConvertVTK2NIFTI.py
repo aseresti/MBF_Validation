@@ -12,7 +12,8 @@ class ConvertVTK2NIFTI():
     def __init__(self,Args) -> None:
         self.Args = Args
         output_dir = "ImageNF"
-        os.system(f"mkdir {self.Args.InputFolder}/{output_dir}")
+        if output_dir not in os.listdir(self.Args.InputFolder):
+            os.system(f"mkdir {self.Args.InputFolder}/{output_dir}")
         self.output_dir = f"{self.Args.InputFolder}/{output_dir}"
 
     def GetImages(self) -> list:
@@ -58,9 +59,12 @@ class ConvertVTK2NIFTI():
 
         for image in vtk_Images:
             image_path = f"{self.Args.InputFolder}/{image}"
-            nfimage_path, _ = f"{os.path.splitext(image_path)}.{self.Args.Nformat}"
+            nfimage, _ = os.path.splitext(image)
+            nfimage_path = f"{self.output_dir}/{nfimage}{self.Args.Nformat}"
+
+            print(f'---Converting vtk to NIFTI: {image}')
             Image = self.ReadVTKImage(image_path)
-            numpy_data = self.vtk2numpy(Image)
+            numpy_data = vtk_to_numpy(Image.GetPointData().GetScalars())#self.vtk2numpy(Image)
             self.numpy2NIFTI(numpy_data, nfimage_path)
 
             
