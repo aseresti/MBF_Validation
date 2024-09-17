@@ -3,6 +3,7 @@ import argparse
 import vtk
 import nibabel as nib
 import numpy as np
+from vtk.util.numpy_support import vtk_to_numpy
 
 
 class ConvertVTK2NIFTI():
@@ -10,6 +11,9 @@ class ConvertVTK2NIFTI():
     """
     def __init__(self,Args) -> None:
         self.Args = Args
+        output_dir = "ImageNF"
+        os.system(f"mkdir {self.Args.InputFolder}/{output_dir}")
+        self.output_dir = f"{self.Args.InputFolder}/{output_dir}"
 
     def GetImages(self) -> list:
         """Gets all of the vtk images within the input directory
@@ -32,27 +36,33 @@ class ConvertVTK2NIFTI():
         reader.Update()
         return reader.GetOutput()
 
-    def vtk_to_numpy(self,Image) -> np.array:
+    def vtk2numpy(self,Image) -> np.array:
         
         vtk_data = Image.GetPointData().GetScalars()
         dims = Image.GetDimensions()
-        numpy_data = vtk.util.numpy_support.vtk_to_numpy(vtk_data)
+        numpy_data = vtk_to_numpy(vtk_data)
         numpy_data = numpy_data.reshape(dims,order='F')
         
         return numpy_data
     
+    def numpy2NIFTI(self,numpy_data, nfimage_path):
+
+        affine = np.eye(4) #no scaling, rotation, or translation is applied
+        nifti_Image = nib.Nifti1Image(numpy_data, affine)
+        nib.save(nifti_Image, nfimage_path)
+
     def main(self) -> None:
         
         vtk_Images = self.GetImages()
         vtk_Images.sort()
 
-        vtk_dict = dict()
         for image in vtk_Images:
             image_path = f"{self.Args.InputFolder}/{image}"
+            nfimage_path, _ = f"{os.path.splitext(image_path)}.{self.Args.Nformat}"
             Image = self.ReadVTKImage(image_path)
-            print(self.vtk_to_numpy(Image))
-            exit(1)
-            vtk_dict.update({f"{image}":f"{Image}"})
+            numpy_data = self.vtk2numpy(Image)
+            self.numpy2NIFTI(numpy_data, nfimage_path)
+
             
             
 
