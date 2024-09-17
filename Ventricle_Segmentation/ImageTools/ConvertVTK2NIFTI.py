@@ -31,13 +31,34 @@ class ConvertVTK2NIFTI():
         return vtk_Images
     
     def ReadVTKImage(self,path) -> vtk.vtkImageData:
+        """Reads the vtk image and returns its scalar data
 
-        reader = vtk.vtkImageReader()
+        Args:
+            path (str): path to the vtk image
+
+        Returns:
+            vtk.vtkImageData: Image scalars (pixel values)
+        """
+
+        if path.endswith('.vti'):
+            reader = vtk.vtkXMLImageDataReader()
+        elif path.endswith('.vtk'):
+            reader = vtk.vtkStructuredPointsReader()
+        
         reader.SetFileName(path)
         reader.Update()
+        
         return reader.GetOutput()
 
     def vtk2numpy(self,Image) -> np.array:
+        """Converts vtk image scalar data into a numpy array with the same dimensions.
+
+        Args:
+            Image (vtk.vtkImageData): The output of ReadVTKImage
+
+        Returns:
+            np.array: numpy array of the image scalars
+        """
         
         vtk_data = Image.GetPointData().GetScalars()
         dims = Image.GetDimensions()
@@ -46,13 +67,22 @@ class ConvertVTK2NIFTI():
         
         return numpy_data
     
-    def numpy2NIFTI(self,numpy_data, nfimage_path):
+    def numpy2NIFTI(self,numpy_data, nfimage_path) -> None:
+        """Converts a numpy array into a nifti image
+
+        Args:
+            numpy_data (np.array): output of the vtk2numpy
+            nfimage_path (str): output nifti image path
+        """
 
         affine = np.eye(4) #no scaling, rotation, or translation is applied
         nifti_Image = nib.Nifti1Image(numpy_data, affine)
         nib.save(nifti_Image, nfimage_path)
 
     def main(self) -> None:
+        """Takes the input folder and reads all of the vtk images inside
+        and converts them into NIFTI images and saves in the output directory.
+        """
         
         vtk_Images = self.GetImages()
         vtk_Images.sort()
@@ -64,7 +94,7 @@ class ConvertVTK2NIFTI():
 
             print(f'---Converting vtk to NIFTI: {image}')
             Image = self.ReadVTKImage(image_path)
-            numpy_data = vtk_to_numpy(Image.GetPointData().GetScalars())#self.vtk2numpy(Image)
+            numpy_data = self.vtk2numpy(Image)
             self.numpy2NIFTI(numpy_data, nfimage_path)
 
             
