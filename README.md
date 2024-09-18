@@ -35,3 +35,17 @@ Use the manual segmentation tools on 3DSlicer to segment the left ventricle in t
 ![alt text](Images/ManualSlicerSegmentation.png)
 
 Note: refine the left ventricle segmentation slide by slide in each direction.
+
+In order to save the segmentation in vtp format use the following steps:
+
+1. on Data tab, export segmentations into a model.
+
+![alt text](<Images/Screenshot 2024-09-18 164500.png>)
+
+2. Export the left ventricle segmentation to file:
+
+![alt text](<Images/Screenshot 2024-09-18 164533.png>)
+
+3. save it in your desire format such as vtp or stl:
+
+![alt text](<Images/Screenshot 2024-09-18 164614.png>)
