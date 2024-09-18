@@ -29,7 +29,7 @@ class shuffle_images():
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-InputFolder", "--InputFolder", dest="InputFolder", required=True, type=str, help="Input Folder contains images")
-    parser.add_argument("-format", "--format", dest="format", required=True, type=str, help="the format of the image")
+    parser.add_argument("-format", "--format", dest="format", required=False, default=".nii.gz", type=str, help="the format of the image")
     parser.add_argument("-percentage", dest="percentage", required=False, default=0.25, type=float, help="the percentage of images to be selected")
     parser.add_argument("-OutputFolder", "--OutputFolder", dest="OutputFolder", required=True, type=str, help="Output directory")
     args = parser.parse_args()
