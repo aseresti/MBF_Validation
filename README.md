@@ -49,3 +49,5 @@ In order to save the segmentation in vtp format use the following steps:
 3. save it in your desire format such as vtp or stl:
 
 ![alt text](<Images/Screenshot 2024-09-18 164614.png>)
+
+Use the same method to export your segmentation to binary label map and export that into file and finally save it as `.nii.gz` which is supported by MONAIlabel as segmentation format.
