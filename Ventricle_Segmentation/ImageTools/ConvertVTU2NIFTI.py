@@ -50,10 +50,11 @@ class ConvertVTU2NIFTI():
         num_points = points.GetNumberOfPoints()
 
         labels = np.zeros(num_points, dtype=np.uint8)
-        
+        #todo: add vtkSelectEnclosedPoints()
 
     def main(self):
         vtufile = self.VTUReader(self.Args.InputVTUFile)
+        #todo: add labelvolume()
         class_arguments = argparse.Namespace(InputFolder=None, Nformat=".nii.gzz")
         np_array = ConvertVTK2NIFTI(class_arguments).vtk2numpy(vtufile)
         ConvertVTK2NIFTI(class_arguments).numpy2NIFTI(np_array, self.output_file_path)
