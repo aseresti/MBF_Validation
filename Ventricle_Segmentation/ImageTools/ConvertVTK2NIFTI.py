@@ -68,7 +68,7 @@ class ConvertVTK2NIFTI():
         return numpy_data
     
     def numpy2NIFTI(self,numpy_data, nfimage_path) -> None:
-        """Converts a numpy array into a nifti image
+        """Converts a numpy array into a nifti image and saves the nifti file within the provided path
 
         Args:
             numpy_data (np.array): output of the vtk2numpy
