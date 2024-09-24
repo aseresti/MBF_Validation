@@ -46,26 +46,40 @@ class ConvertSurface2NIFTI():
         '''
         return unstructuredgrid
     
-    def probfilter(self, Enclosed, Image):
+    def CreateLabeledImage(self, Enclosed, Image):
         
         bounds = Image.GetBounds()
+        origin = Image.GetOrigin()
+        spacing = Image.GetSpacing()
 
         structuredgrid = vtk.vtkImageData()
-        structuredgrid.SetSpacing(0.5,0.5,0.5)
-        structuredgrid.SetOrigin(bounds[0], bounds[2], bounds[4])
+        structuredgrid.SetSpacing(spacing)
+        structuredgrid.SetOrigin(origin)
 
         dims = [
-            int((bounds[1]-bounds[0]) / 0.5),
-            int((bounds[3]-bounds[2]) / 0.5),
-            int((bounds[5]-bounds[4]) / 0.5)
+            int((bounds[1]-bounds[0]) / spacing[0]),
+            int((bounds[3]-bounds[2]) / spacing[1]),
+            int((bounds[5]-bounds[4]) / spacing[2])
         ]
 
         structuredgrid.SetDimensions(dims)
+
+        structuredgrid.AllocateScalars(vtk.VTK_FLOAT, 1)
         
-        #print(dir(structuredgrid.GetPointData()))
-        #exit(0)
-        Image.GetPointData().AddArray(Enclosed)
-        Image.Modified()
+        for i in range(Image.GetNumberOfPoints()):
+            (x,y,z) = Image.GetPoint(i)
+            scalar = Enclosed.GetValue(i)
+            iX = int(round((x-origin[0])/spacing[0]))
+            iY = int(round((y-origin[1])/spacing[1]))
+            iZ = int(round((z-origin[2])/spacing[2]))
+
+            if 0 <= iX < dims[0] and 0 <= iY < dims[1] and 0 <= iZ < dims[2]:
+                #print(f"Setting scalar at ({iX}, {iY}, {iZ}) to {scalar}")
+                structuredgrid.SetScalarComponentFromFloat(iX,iY,iZ,0,scalar)
+
+
+
+
 
         '''
         probfilter = vtk.vtkProbeFilter()
@@ -73,7 +87,7 @@ class ConvertSurface2NIFTI():
         probfilter.SetSourceData(Enclosed)
         probfilter.Update()
         '''
-        return Image
+        return structuredgrid
 
     def vtk2numpy(self,Image) -> np.array:
         """Converts vtk image scalar data into a numpy array with the same dimensions.
@@ -93,13 +107,16 @@ class ConvertSurface2NIFTI():
         return numpy_data
 
 
-    def labelvolume(self, Surface, Image):
+    def LabelEnclosedPoints(self, Surface, Image):
         
         PointsVTK=vtk.vtkPoints()
         PointsVTK.SetNumberOfPoints(Image.GetNumberOfPoints())
 
+        #structuredgrid = vtk.vtkImageData()
+
         for i in range(Image.GetNumberOfPoints()):
             PointsVTK.SetPoint(i,Image.GetPoint(i))
+            #structuredgrid.GetPointData().Setpoint(i,Image.GetPoint(i))
 		
         print ("--- Converting Image Points into a Polydata")
 		#Convert into a polydata format
@@ -113,6 +130,8 @@ class ConvertSurface2NIFTI():
         selectEnclosed.SetTolerance(0.00000000001)
         selectEnclosed.Update()
 
+        #SelectedArray = selectEnclosed.GetOutput().GetPointData().GetArray("SelectedPoints")
+    
         return selectEnclosed.GetOutput().GetPointData().GetArray("SelectedPoints")
     
     def WriteVTK(self, Image):
@@ -126,8 +145,8 @@ class ConvertSurface2NIFTI():
         #todo: add labelvolume()
         class_arguments = argparse.Namespace(InputFolder=None, Nformat=".nii.gzz")
         Image = ConvertVTK2NIFTI(class_arguments).ReadVTKImage(self.Args.InputImage)
-        Enclosed = self.labelvolume(Surface, Image)
-        Labeled_Image = self.probfilter(Enclosed, Image)
+        Enclosed = self.LabelEnclosedPoints(Surface, Image)
+        Labeled_Image = self.CreateLabeledImage(Enclosed, Image)
         self.WriteVTK(Labeled_Image)
         #np_array = self.vtk2numpy(Labeled_Image)#ConvertVTK2NIFTI(class_arguments).vtk2numpy(Labeled_Image)
         #ConvertVTK2NIFTI(class_arguments).numpy2NIFTI(np_array, self.output_file_path)
