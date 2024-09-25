@@ -19,6 +19,17 @@ The pipeline is available below:
 
 ## 1. Manual Segmentation and Image Processing
 
+(
+  to-do: delibrate the pipeline
+    1. converting vti images to vtu images and store them in specific folders
+    2. manually segment 20-30% of the vtk images using the slicer tools on 3D Slicer
+    3. export segmentation model from slicer and do a manual smoothing using MeshMixer
+    4. convert smoothed model to vtp. Use scripts to convert the model into a label-map segmentation.
+    5. save the images and labels using the data format and file system suggested by MONAI label.
+    6. label the rest of the datasets using either the pre-existing models in MONAI label or generate a model from scratch.
+    7. generate a NNU-Net model and train it based on the dataset segmented using MONAI Label.
+)
+
 Use the tools in the ImageTools folder to convert the images into nifti for them to be supported on Slicer. Use the following commands on your terminal:
 ```bash
 python ImageTools/ConvertVTK2NIFTI.py -InputFolder /path/to/the/folder/containing/vtk/images -Nformat nii or nii.gz
