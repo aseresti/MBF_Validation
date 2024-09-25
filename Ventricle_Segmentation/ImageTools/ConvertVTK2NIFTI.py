@@ -67,7 +67,7 @@ class ConvertVTK2NIFTI():
         
         return numpy_data
     
-    def numpy2NIFTI(self,numpy_data, nfimage_path) -> None:
+    def numpy2NIFTI(self,numpy_data, nfimage_path, vtkImage) -> None:
         """Converts a numpy array into a nifti image and saves the nifti file within the provided path
 
         Args:
@@ -75,7 +75,16 @@ class ConvertVTK2NIFTI():
             nfimage_path (str): output nifti image path
         """
 
+        spacing = vtkImage.GetSpacing()
+        origin = vtkImage.GetOrigin()
+
         affine = np.eye(4) #no scaling, rotation, or translation is applied
+        #construct affin transform matrix based on the spacing and origin of the initial image
+        affine[0, 0] = spacing[0]
+        affine[1, 1] = spacing[1]
+        affine[2, 2] = spacing[2]
+        affine[:3, 3] = origin
+
         nifti_Image = nib.Nifti1Image(numpy_data, affine)
         nib.save(nifti_Image, nfimage_path)
 
