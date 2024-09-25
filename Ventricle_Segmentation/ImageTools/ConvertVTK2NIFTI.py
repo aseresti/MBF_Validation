@@ -104,7 +104,7 @@ class ConvertVTK2NIFTI():
             print(f'---Converting vtk to NIFTI: {image}')
             Image = self.ReadVTKImage(image_path)
             numpy_data = self.vtk2numpy(Image)
-            self.numpy2NIFTI(numpy_data, nfimage_path)
+            self.numpy2NIFTI(numpy_data, nfimage_path, Image)
 
             
             
