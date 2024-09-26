@@ -11,10 +11,6 @@ class ConvertVTK2NIFTI():
     """
     def __init__(self,Args) -> None:
         self.Args = Args
-        output_dir = "ImageNF"
-        if output_dir not in os.listdir(self.Args.InputFolder):
-            os.system(f"mkdir {self.Args.InputFolder}/{output_dir}")
-        self.output_dir = f"{self.Args.InputFolder}/{output_dir}"
 
     def GetImages(self) -> list:
         """Gets all of the vtk images within the input directory
@@ -92,7 +88,12 @@ class ConvertVTK2NIFTI():
         """Takes the input folder and reads all of the vtk images inside
         and converts them into NIFTI images and saves in the output directory.
         """
-        
+        output_dir = "ImageNF"
+        if output_dir not in os.listdir(self.Args.InputFolder):
+            os.system(f"mkdir {self.Args.InputFolder}/{output_dir}")
+        self.output_dir = f"{self.Args.InputFolder}/{output_dir}"
+
+
         vtk_Images = self.GetImages()
         vtk_Images.sort()
 
