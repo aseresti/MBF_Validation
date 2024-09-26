@@ -6,8 +6,15 @@ import argparse
 from vtk.util.numpy_support import vtk_to_numpy
 from ConvertVTK2NIFTI import ConvertVTK2NIFTI
 
-class ConvertSurface2NIFTI():
+class ConvertModel2LabelMap():
+    """Takes the surface model (.vtp) as input and returns a binary label map segmentation in vtk (.vtk) and NIFTI (.nii.gz) formats
+    """
     def __init__(self, Args) -> None:
+        """setting the input arguments and the path of the output image.
+
+        Args:
+            Args (NameSpace): Input arguments
+        """
         self.Args = Args
         output_dir, InputSurfaceName = os.path.split(self.Args.InputSurface)
         InputSurfaceName = os.path.splitext(InputSurfaceName)[0]
@@ -15,21 +22,38 @@ class ConvertSurface2NIFTI():
         ImageName = os.path.splitext(ImageName)[0]
         self.output_file_path = os.path.join(output_dir,ImageName + "_" +InputSurfaceName)
 
-    def VTPReader(self,path):
+    def VTPReader(self,path: str) -> vtk.vtkPolyData:
+        """Reads the surface model file
+
+        Args:
+            path (str): path to the surface model file
+
+        Returns:
+            vtk.vtkPolyData: surface model dataset
+        """
         reader = vtk.vtkXMLPolyDataReader()
         reader.SetFileName(path)
         reader.Update()
         return reader.GetOutput()
     
-    def CreateLabeledImage(self, Enclosed, Image):
+    def CreateLabeledImage(self, Enclosed:vtk.vtkUnsignedCharArray, Image:vtk.vtkImageData) -> vtk.vtkStructuredGrid:
+        """ takes the array of the binary label map and projects it into an image with same origin and spacing and dimensions of the input image
+
+        Args:
+            Enclosed (vtk.vtkUnsignedCharArray): binary label map array
+            Image (vtk.vtkImageData): input image
+
+        Returns:
+            vtk.vtkStructuredGrid: binary labeled image
+        """
         
         bounds = Image.GetBounds()
         origin = Image.GetOrigin()
         spacing = Image.GetSpacing()
 
-        structuredgrid = vtk.vtkImageData()
-        structuredgrid.SetSpacing(spacing)
-        structuredgrid.SetOrigin(origin)
+        LabeledImage = vtk.vtkImageData()
+        LabeledImage.SetSpacing(spacing)
+        LabeledImage.SetOrigin(origin)
 
         dims = [
             int((bounds[1]-bounds[0]) / spacing[0]),
@@ -37,9 +61,9 @@ class ConvertSurface2NIFTI():
             int((bounds[5]-bounds[4]) / spacing[2])
         ]
 
-        structuredgrid.SetDimensions(dims)
+        LabeledImage.SetDimensions(dims)
 
-        structuredgrid.AllocateScalars(vtk.VTK_FLOAT, 1)
+        LabeledImage.AllocateScalars(vtk.VTK_FLOAT, 1)
         
         for i in range(Image.GetNumberOfPoints()):
             (x,y,z) = Image.GetPoint(i)
@@ -49,9 +73,9 @@ class ConvertSurface2NIFTI():
             iZ = int(round((z-origin[2])/spacing[2]))
 
             if 0 <= iX < dims[0] and 0 <= iY < dims[1] and 0 <= iZ < dims[2]:
-                structuredgrid.SetScalarComponentFromFloat(iX,iY,iZ,0,scalar)
+                LabeledImage.SetScalarComponentFromFloat(iX,iY,iZ,0,scalar)
 
-        return structuredgrid
+        return LabeledImage
 
     def vtk2numpy(self,Image) -> np.array:
         """Converts vtk image scalar data into a numpy array with the same dimensions.
@@ -93,8 +117,6 @@ class ConvertSurface2NIFTI():
         selectEnclosed.SetSurfaceData(Surface) #Surface Model
         selectEnclosed.SetTolerance(0.000000001)
         selectEnclosed.Update()
-
-        #SelectedArray = selectEnclosed.GetOutput().GetPointData().GetArray("SelectedPoints")
     
         return selectEnclosed.GetOutput().GetPointData().GetArray("SelectedPoints")
     
@@ -121,4 +143,4 @@ if __name__=="__main__":
     parser.add_argument("-InputImage", "--InputImage", required=True, dest="InputImage", type=str)
     args = parser.parse_args()
 
-    ConvertSurface2NIFTI(args).main()
+    ConvertModel2LabelMap(args).main()
