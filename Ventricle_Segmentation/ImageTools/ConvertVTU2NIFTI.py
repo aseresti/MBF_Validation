@@ -12,6 +12,7 @@ class ConvertSurface2NIFTI():
         output_dir, InputSurfaceName = os.path.split(self.Args.InputSurface)
         InputSurfaceName = os.path.splitext(InputSurfaceName)[0]
         _, ImageName = os.path.split(self.Args.InputImage)
+        ImageName = os.path.splitext(ImageName)[0]
         self.output_file_path = os.path.join(output_dir,ImageName + "_" +InputSurfaceName)
 
     def VTPReader(self,path):
@@ -110,8 +111,9 @@ class ConvertSurface2NIFTI():
         Enclosed = self.LabelEnclosedPoints(Surface, Image)
         Labeled_Image = self.CreateLabeledImage(Enclosed, Image)
         self.WriteVTK(Labeled_Image)
-        #np_array = self.vtk2numpy(Labeled_Image)#ConvertVTK2NIFTI(class_arguments).vtk2numpy(Labeled_Image)
-        #ConvertVTK2NIFTI(class_arguments).numpy2NIFTI(np_array, self.output_file_path + ".nii.gz")
+        #todo: convert to nifti (error in vtk2numpy)
+        np_array = ConvertVTK2NIFTI(class_arguments).vtk2numpy(Labeled_Image)
+        ConvertVTK2NIFTI(class_arguments).numpy2NIFTI(np_array, self.output_file_path + ".nii.gz", Image)
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser()
