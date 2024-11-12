@@ -77,25 +77,17 @@ class ConvertModel2LabelMap():
 
         return LabeledImage
 
-    def vtk2numpy(self,Image) -> np.array:
-        """Converts vtk image scalar data into a numpy array with the same dimensions.
+
+    def LabelEnclosedPoints(self, Surface: vtk.vtkPolyData, Image:vtk.vtkImageData) -> vtk.vtkUnsignedCharArray:
+        """Takes the input image and input surface and returns the labeled array where 1 are pixels that are enclosed the surface
 
         Args:
-            Image (vtk.vtkImageData): The output of ReadVTKImage
+            Surface (vtk.vtkPolyData): Input vtp surface
+            Image (vtk.vtkImageData): Input vtk image
 
         Returns:
-            np.array: numpy array of the image scalars
+            vtk.vtkUnsignedCharArray: binary labeled array
         """
-        
-        vtk_data = Image
-        dims = Image.GetDimensions()
-        numpy_data = vtk_to_numpy(vtk_data)
-        numpy_data = numpy_data.reshape(dims,order='F')
-        
-        return numpy_data
-
-
-    def LabelEnclosedPoints(self, Surface, Image):
         
         PointsVTK=vtk.vtkPoints()
         PointsVTK.SetNumberOfPoints(Image.GetNumberOfPoints())
@@ -120,7 +112,7 @@ class ConvertModel2LabelMap():
     
         return selectEnclosed.GetOutput().GetPointData().GetArray("SelectedPoints")
     
-    def WriteVTK(self, Image):
+    def WriteVTK(self, Image: vtk.vtkImageData) -> None:
         writer = vtk.vtkDataSetWriter()#vtkXMLImageDataWriter()
         writer.SetFileName(self.output_file_path + ".vtk")
         writer.SetInputData(Image)
@@ -128,12 +120,14 @@ class ConvertModel2LabelMap():
 
     def main(self):
         Surface = self.VTPReader(self.Args.InputSurface)
+        print("type(Surface) = ", type(Surface))
         class_arguments = argparse.Namespace(InputFolder=None, Nformat=".nii.gzz")
         Image = ConvertVTK2NIFTI(class_arguments).ReadVTKImage(self.Args.InputImage)
+        print("type(Image) = ", type(Image))
         Enclosed = self.LabelEnclosedPoints(Surface, Image)
         Labeled_Image = self.CreateLabeledImage(Enclosed, Image)
+        print("type(Labeled_Image) = ",type(Labeled_Image))
         self.WriteVTK(Labeled_Image)
-        #todo: convert to nifti (error in vtk2numpy)
         np_array = ConvertVTK2NIFTI(class_arguments).vtk2numpy(Labeled_Image)
         ConvertVTK2NIFTI(class_arguments).numpy2NIFTI(np_array, self.output_file_path + ".nii.gz", Image)
 

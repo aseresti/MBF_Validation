@@ -79,7 +79,12 @@ class ConvertVTK2NIFTI():
         affine[0, 0] = spacing[0]
         affine[1, 1] = spacing[1]
         affine[2, 2] = spacing[2]
-        affine[:3, 3] = origin
+
+        affine[0, 0] *= -1  # Flip the X axis
+        affine[1, 1] *= -1  # Flip the Y axis
+
+        vtk_origin_ras = [-origin[0], -origin[1], origin[2]]
+        affine[:3, 3] = vtk_origin_ras
 
         nifti_Image = nib.Nifti1Image(numpy_data, affine)
         nib.save(nifti_Image, nfimage_path)
@@ -113,7 +118,7 @@ class ConvertVTK2NIFTI():
 if __name__=="__main__":
     Parser = argparse.ArgumentParser()
     Parser.add_argument("-InputFolder", "--InputFolder", type= str, default="./", dest= "InputFolder", required=True, help="the folder containing vtk format images")
-    Parser.add_argument("-Nformat", "--Nformat", type= str, default=".nii.gz", dest="Nformat", required= True, help="NIFTI supported file formats: .nii or .nii.gz")
+    Parser.add_argument("-Nformat", "--Nformat", type= str, default=".nii.gz", dest="Nformat", required= False, help="NIFTI supported file formats: .nii or .nii.gz")
     args = Parser.parse_args()
 
     ConvertVTK2NIFTI(args).main()

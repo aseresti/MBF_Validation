@@ -2,8 +2,24 @@ import os
 import argparse
 from pathlib import Path
 
+class ImageWriter():
+    def __init__(self,Args):
+        self.Args = Args
+
+    def vti2vtk(self):
+        pass
+
+    def vtk2nifti(self):
+        pass
+
+    def nifti2vtk(self):
+        pass
+
+    
+
+    
 def VTI2VTK(args):
-    """This script is specific to Japanese dataset. Modify for other uses. 
+    """This script is to convert vti images within a directory. 
 
     Args:
         args (string): InputFoldername
