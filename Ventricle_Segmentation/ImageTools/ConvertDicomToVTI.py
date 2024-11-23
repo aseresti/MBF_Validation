@@ -15,10 +15,10 @@ If the image stack is CTA the NofCycel is 0.
 import glob
 import os
 import argparse
-#import vtk
-#import SimpleITK as sitk
-#from vtk.util.numpy_support import numpy_to_vtk
-#import numpy as np
+import vtk
+import SimpleITK as sitk
+from vtk.util.numpy_support import numpy_to_vtk
+import numpy as np
 
 
 class ConvertDicomtoVTI():
@@ -27,15 +27,22 @@ class ConvertDicomtoVTI():
     
     def convert(self,DCM1:str,OutputPath:str)->None:
         os.system(f'vmtkimagereader -ifile {DCM1} --pipe vmtkimagewriter -ofile {OutputPath}')
-    '''
-    def ReadDicomSeries(self, BatchPath:str):
+    
+    def ReadDicomSeries(self, data_directory:str):
+    
+        series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(data_directory)
+        if series_IDs:
+            print("---------Reading Dicom file")
+
+        print("---------Executing SITK image")
         reader = sitk.ImageSeriesReader()
-        names = reader.GetGDCMSeriesFileNames(BatchPath)
+        names = reader.GetGDCMSeriesFileNames(data_directory, series_IDs[0])
         reader.SetFileNames(names)
         return reader.Execute()
     
     def sitk2vtk(self, sitk_image:sitk.Image):
         image_array = sitk.GetArrayFromImage(sitk_image)
+        print("---------Converting sitk image into vtk")
         
         vtk_image = vtk.vtkImageData()
         vtk_image.SetDimensions(image_array.shape)
@@ -48,11 +55,12 @@ class ConvertDicomtoVTI():
         return vtk_image
     
     def WriteVTK(self, Image):
+        print("---------Writing VTK image")
         writer = vtk.vtkDataSetWriter()#vtkXMLImageDataWriter()
-        writer.SetFileName(self.output_file_path + ".vtk")
+        writer.SetFileName(self.Args.OutputFileName)
         writer.SetInputData(Image)
         writer.Write()
-    '''
+    
 
     def main(self):
         filenames = glob.glob(f'{self.Args.InputFolderName}/*.dcm')
@@ -60,8 +68,14 @@ class ConvertDicomtoVTI():
         
         if self.Args.NumberOfCycles == 0:
             print("Converting CTA DCM data into vti")
-            self.convert(filenames[0],f"./{self.Args.OutputFileName}")
+            #self.convert(filenames[0],f"./{self.Args.OutputFileName}")
 
+            sitk_image = self.ReadDicomSeries(self.Args.InputFolderName)
+            vtk_image = self.sitk2vtk(sitk_image)
+            self.WriteVTK(vtk_image)
+
+            
+        '''
         else:
             self.N_file_per_cycle = int(len(filenames)/self.Args.NumberOfCycles)
             for i in range(0,self.Args.NumberOfCycles):
@@ -77,7 +91,7 @@ class ConvertDicomtoVTI():
                 filenames_ = glob.glob(f'{pathDicom}/*.dcm')
                 filenames_ = sorted(filenames_)
                 self.convert(filenames_[0], f'./CTMPI_Image_{i+1}.vtk')
-                '''
+                
                 sitk_image = self.ReadDicomSeries(pathDicom)
                 vtk_image = self.sitk2vtk(sitk_image)
 
@@ -88,7 +102,8 @@ class ConvertDicomtoVTI():
                 self.WriteVTK(vtk_image)
 
                 os.system(f"rm -rf {pathDicom}")
-                '''
+                
+            '''
 
 if __name__ == '__main__':
     #descreption
@@ -96,7 +111,7 @@ if __name__ == '__main__':
     #Input
     parser.add_argument('-InputFolder', '--InputFolder', type = str, required = True, dest = 'InputFolderName', help = 'The name of the folder with all of the dicom files')
     #NumberOfCycles
-    parser.add_argument('-NofCycle', '--NumberOfCycles', type = int, required = True, dest = 'NumberOfCycles', help = 'The number of perfusion images that are in the dicom folder. if CTA put 0')
+    parser.add_argument('-NofCycle', '--NofCycle', type = int, required = True, dest = 'NumberOfCycles', help = 'The number of perfusion images that are in the dicom folder. if CTA put 0')
 
     parser.add_argument('-OutputFileName', '--OutputFileName', type = str, required=True, dest = "OutputFileName")
     args = parser.parse_args()
