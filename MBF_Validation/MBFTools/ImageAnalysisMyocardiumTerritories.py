@@ -101,6 +101,7 @@ class ImageAnalysisMyocardiumCoronaryTerritories():
 		Closest_CL=[]
 		count_p=0.05
 		progress_old=-1
+		print(CL_coords.keys())
 		for i,LV_coord in enumerate(LV_coords):
 			progress_=self.PRINT_PROGRESS(i,N,progress_old)
 			progress_old=progress_
@@ -118,19 +119,23 @@ class ImageAnalysisMyocardiumCoronaryTerritories():
 		outfile=open(self.Args.OutputFilename2,'w')
 		outfile.write("TerritoryLabel CenterlineName\n")
 		counter=0
+		print(filenames)
 		for filename in filenames:
+			print(filename)
 			filename_short=filename.split("/")[-1]
 			reader=vtk.vtkXMLPolyDataReader()
 			reader.SetFileName(filename)
 			reader.Update()
 			CL_data=reader.GetOutput()
 			N=CL_data.GetNumberOfPoints()
+			print(N)
 			points_=np.zeros(shape=(N,3))
 			for i in range(N):
 				points_[i]=CL_data.GetPoint(i)	
 			CL_coords[filename_short]=points_
 			outfile.write("%d %s\n"%(counter,filename.split("/")[-1]))
 			counter+=1 
+		print(CL_coords)
 		outfile.close()
 		return CL_coords	
 
