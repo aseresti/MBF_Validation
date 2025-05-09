@@ -22,7 +22,7 @@ class MBFNormalization():
         IndexMBF = numpy_to_vtk(ImageScalars/per_75th)
         IndexMBF.SetName("IndexMBF")
         self.MBF.GetPointData().AddArray(IndexMBF)
-        OPath = f"{os.path.splitext(self.args.InputMBFMap)[0]}_Normalized.vtu"
+        OPath = f"./{os.path.splitext(os.path.basename(self.args.InputMBFMap))[0]}_Normalized.vtu"
         WriteVTUFile(OPath, self.MBF)
 
     def CalculateVolume(self,ClosedSurface):
@@ -43,10 +43,12 @@ class MBFNormalization():
     def CollectTerritoryInfo(self):
         Volume = 0
         MBF_sum = 0
+        self.TerritoryTags = ""
         for tag in self.args.TerritoryTag:
-            for (key, item) in self.Labels:
+            for (key, item) in self.Labels.items():
                 if tag in key:
-                    territory_ = ThresholdInBetween(self.MBF, "TerritoryMaps", item, item)
+                    self.TerritoryTags += key
+                    territory_ = ThresholdInBetween(self.MBF, "TerritoryMaps", int(item), int(item))
                     Volume += self.CalculateVolume(ExtractSurface(territory_))
                     index_mbf_ = vtk_to_numpy(territory_.GetPointData().GetArray("IndexMBF"))
                     MBF_sum += np.sum(index_mbf_)
@@ -55,7 +57,13 @@ class MBFNormalization():
     def main(self):
         self.Normalize()
         Volume, MBF_sum = self.CollectTerritoryInfo()
-        print(Volume * MBF_sum)
+        Volume_mL = Volume/1000
+        print(Volume_mL * MBF_sum)
+        ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBFMap))[0]}_MBFxVolumeResults.dat"
+        with open(ofile_path, "w") as ofile:
+            ofile.writelines("Territory Tags:")
+            ofile.writelines(self.TerritoryTags)
+            ofile.writelines(f"IndexMBFxVolume = {Volume * MBF_sum}")
         
 
 
@@ -67,4 +75,4 @@ if __name__ == "__main__":
     parser.add_argument("-TerritoryTag", "--TerritoryTag", type= str, nargs="+", required=True, dest = "TerritoryTag")
     args = parser.parse_args()
     
-    MBFNormalization(args).Normalize()
+    MBFNormalization(args).main()
