@@ -42,28 +42,34 @@ class MBFNormalization():
     
     def CollectTerritoryInfo(self):
         Volume = 0
+        IndexMBF_sum = 0
         MBF_sum = 0
         self.TerritoryTags = ""
-        for tag in self.args.TerritoryTag:
-            for (key, item) in self.Labels.items():
-                if tag in key:
-                    self.TerritoryTags += key
-                    territory_ = ThresholdInBetween(self.MBF, "TerritoryMaps", int(item), int(item))
-                    Volume += self.CalculateVolume(ExtractSurface(territory_))
-                    index_mbf_ = vtk_to_numpy(territory_.GetPointData().GetArray("IndexMBF"))
-                    MBF_sum += np.sum(index_mbf_)
-        return Volume, MBF_sum
+        for (key, item) in self.Labels.items():
+            if self.args.TerritoryTag in key:
+                self.TerritoryTags += os.path.splitext(key)[0] + "+"
+                territory_ = ThresholdInBetween(self.MBF, "TerritoryMaps", int(item), int(item))
+                Volume += self.CalculateVolume(ExtractSurface(territory_))
+
+                index_mbf_ = vtk_to_numpy(territory_.GetPointData().GetArray("IndexMBF"))
+                IndexMBF_sum += np.sum(index_mbf_)
+
+                mbf_ = vtk_to_numpy(territory_.GetPointData().GetArray("ImageScalars"))
+                MBF_sum += np.sum(mbf_)
+        return Volume, MBF_sum, IndexMBF_sum
     
     def main(self):
         self.Normalize()
-        Volume, MBF_sum = self.CollectTerritoryInfo()
+        Volume, MBF_sum, IndexMBF_sum = self.CollectTerritoryInfo()
         Volume_mL = Volume/1000
-        print(Volume_mL * MBF_sum)
-        ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBFMap))[0]}_MBFxVolumeResults.dat"
+        print("MBF:", Volume_mL * MBF_sum)
+        print("IndexMBF:", Volume_mL * IndexMBF_sum)
+        ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBFMap))[0]}_MBFxVolume_{self.args.TerritoryTag}.dat"
         with open(ofile_path, "w") as ofile:
-            ofile.writelines("Territory Tags:")
-            ofile.writelines(self.TerritoryTags)
-            ofile.writelines(f"IndexMBFxVolume = {Volume * MBF_sum}")
+            ofile.writelines("Territory Tags:\n")
+            ofile.writelines(f"{self.TerritoryTags}\n")
+            ofile.writelines(f"MBFxVolume = {Volume * MBF_sum}")
+            ofile.writelines(f"IndexMBFxVolume = {Volume * IndexMBF_sum}")
         
 
 
@@ -72,7 +78,7 @@ if __name__ == "__main__":
     parser.add_argument("-InputMBFMap", "--InputMBFMap", dest = "InputMBFMap", type = str, required = True)
     parser.add_argument("-InputLabel", "--InputLabel", dest = "InputLabel", type= str, required= True)
     parser.add_argument("-ArrayName", "--ArrayName", dest = "ArrayName", type = str, required = False, default = "ImageScalars")
-    parser.add_argument("-TerritoryTag", "--TerritoryTag", type= str, nargs="+", required=True, dest = "TerritoryTag")
+    parser.add_argument("-TerritoryTag", "--TerritoryTag", type= str, required=True, dest = "TerritoryTag")
     args = parser.parse_args()
     
     MBFNormalization(args).main()
