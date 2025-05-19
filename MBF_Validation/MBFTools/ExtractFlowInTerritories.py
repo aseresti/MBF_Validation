@@ -8,7 +8,7 @@ class ExtractSubtendedFlow():
     def __init__(self, args):
         self.MBF = ReadVTUFile(args.InputMBF)
         self.args = args
-        labels = f"{os.path.splitext(self.args.InputMBFMap)[0]}_Labels.dat"
+        labels = f"{os.path.splitext(self.args.InputMBF)[0]}_Labels.dat"
         self.Labels = {}
         with open(labels, "r") as ifile:
             for LINE in ifile:
@@ -53,17 +53,17 @@ class ExtractSubtendedFlow():
     
     def main(self):
         SubtendedFlow = self.ExtractSubtendedTerritory()
-        print("Flow = ", SubtendedFlow, "mL/min")
-        ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBFMap))[0]}_MBFxVolume_{self.args.TerritoryTag}.dat"
+        print("Flow = ", int(SubtendedFlow*100)/100, "mL/min")
+        ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBF))[0]}_MBFxVolume_{self.args.TerritoryTag}.dat"
         with open(ofile_path, "w") as ofile:
             ofile.writelines("Territory Tags:\n")
             ofile.writelines(f"{self.TerritoryTags}\n")
-            ofile.writelines(f"Territory Flow: {SubtendedFlow} mL/min")
+            ofile.writelines(f"Territory Flow: {int(SubtendedFlow*100)/100} mL/min")
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-InputMBF", "--InputMBF", dest= "InputMBF", type= str, required= True)
-    parser.add_argument("-InputLabel", "--InputLabel", dest= "InputLabel", type= str, required= True)
+    #parser.add_argument("-InputLabel", "--InputLabel", dest= "InputLabel", type= str, required= True)
     parser.add_argument("-ArrayName", "--ArrayName", dest = "ArrayName", type = str, required = False, default = "ImageScalars")
     parser.add_argument("-TerritoryTag", "--TerritoryTag", type= str, required=True, dest = "TerritoryTag")
     parser.add_argument("-Unit", "--Unit", type= str, dest= "Unit", default="mm", required=False)
