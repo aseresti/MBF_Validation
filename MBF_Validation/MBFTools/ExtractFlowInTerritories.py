@@ -66,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("-InputLabel", "--InputLabel", dest= "InputLabel", type= str, required= True)
     parser.add_argument("-ArrayName", "--ArrayName", dest = "ArrayName", type = str, required = False, default = "ImageScalars")
     parser.add_argument("-TerritoryTag", "--TerritoryTag", type= str, required=True, dest = "TerritoryTag")
+    parser.add_argument("-Unit", "--Unit", type= str, dest= "Unit", default="mm", required=False)
     args = parser.parse_args()
     
     ExtractSubtendedFlow(args).main()
