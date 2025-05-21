@@ -59,26 +59,27 @@ class PlotMBFVariabilityPerTerritory():
         ImageScalars = vtk_to_numpy(CellData.GetArray(self.args.ArrayName))
         NCells = Territory.GetNumberOfCells()
         TerritoryVolume = 0
-        TerritoryFlow = 0
+        TerritoryFlow = []
         for i in range(NCells):
             cell = Territory.GetCell(i)
             cell_bounds = cell.GetBounds()
             cell_volume = abs(cell_bounds[0] - cell_bounds[1]) * abs(cell_bounds[2] - cell_bounds[3]) * abs(cell_bounds[4] - cell_bounds[5])
-            TerritoryFlow += ImageScalars[i]*cell_volume
+            TerritoryFlow.append(ImageScalars[i]*cell_volume)
             TerritoryVolume += cell_volume
 
         if self.args.Unit == 'mm':
-            return TerritoryFlow/1000/100, TerritoryVolume/1000
+            return np.array(TerritoryFlow)/1000/100, TerritoryVolume/1000
         elif self.args.Unit == 'cm':
-            return TerritoryFlow/100, TerritoryVolume/1000
+            return np.array(TerritoryFlow)/100, TerritoryVolume/1000
 
-    def ExtractIschemicTerritoryMBFStatistics(self):
-        pass
-
-    def ExtractFlowInTerritories(self):
-        pass
-
-    def ExtractIschemicTerritoryFlowStatistics(self):
+    def ExtractFlowInTerritories(self, TerritoryDict):
+        FlowDict = {k:np.array([]) for k in TerritoryDict.keys()}
+        for key, value in TerritoryDict.items():
+            FlowDict[key] = self.CalculateVoxelFlow(value)
+        
+        return FlowDict
+    
+    def ExtractIschemicTerritoryStatistics(self):
         pass
 
     def main(self):
