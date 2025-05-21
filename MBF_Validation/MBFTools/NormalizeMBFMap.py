@@ -8,6 +8,8 @@ from vtk.util.numpy_support import vtk_to_numpy, numpy_to_vtk
 class MBFNormalization():
     def __init__(self, args):
         self.args = args
+    
+    def initialize(self):
         self.MBF = ReadVTUFile(os.path.join(self.args.InputFolder,self.args.InputMBFMap))
         labels = os.path.join(self.args.InputFolder,self.args.InputLabel)
         self.Labels = {}
@@ -16,14 +18,14 @@ class MBFNormalization():
                 line = LINE.split()
                 self.Labels[line[1]] = line[0]
 
-    def Normalize(self):
-        ImageScalars = self.MBF.GetPointData().GetArray(self.args.ArrayName)
+    def Normalize(self, MBF):
+        ImageScalars = MBF.GetPointData().GetArray(self.args.ArrayName)
         per_75th = np.percentile(vtk_to_numpy(ImageScalars), 75)
         IndexMBF = numpy_to_vtk(ImageScalars/per_75th)
         IndexMBF.SetName("IndexMBF")
-        self.MBF.GetPointData().AddArray(IndexMBF)
-        OPath = f"./{os.path.splitext(os.path.basename(self.args.InputMBFMap))[0]}_Normalized.vtu"
-        WriteVTUFile(OPath, self.MBF)
+        MBF.GetPointData().AddArray(IndexMBF)
+        
+        return MBF
 
     def CalculateVolume(self,ClosedSurface):
         tri_filter = vtk.vtkTriangleFilter()
@@ -63,7 +65,10 @@ class MBFNormalization():
         return Volume, MBF_sum, IndexMBF_sum, MedianMBF
         
     def main(self):
-        self.Normalize()
+        self.initialize()
+        self.MBF = self.Normalize(self.MBF)
+        OPath = f"./{os.path.splitext(os.path.basename(self.args.InputMBFMap))[0]}_Normalized.vtu"
+        WriteVTUFile(OPath, self.MBF)
         Volume, MBF_sum, IndexMBF_sum, MedianMBFArray = self.CollectTerritoryInfo()
         MBF50 = np.median(MedianMBFArray)
         MBF75 = np.percentile(MedianMBFArray, 75)
