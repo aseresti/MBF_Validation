@@ -79,8 +79,16 @@ class PlotMBFVariabilityPerTerritory():
         
         return FlowDict
     
-    def ExtractIschemicTerritoryStatistics(self):
-        pass
+    def ReadIschemicLabels(self):
+        Ischemic_Labels = {"post_LAD": [], "post_LCx":[], "post_PL":[]}
+
+        with open(self.InputLabels, "r") as ifile:
+            for LINE in ifile:
+                line = LINE.split()
+                for key in Ischemic_Labels.keys():
+                    if line[1].find(key)>=0: Ischemic_Labels[key].append(int(line[0]))
+
+        Ischemic_Labels = {k:v for k, v in Ischemic_Labels.items() if len(v)>0}
 
     def main(self):
         pass
