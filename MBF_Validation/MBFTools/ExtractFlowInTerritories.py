@@ -38,27 +38,30 @@ class ExtractSubtendedFlow():
             voxel = Volume.GetCell(i)
             Flow += self.CalculateVoxelFlow(MBFScalarArray, voxel)
         
-        return Flow
+        return Flow, NCells
     
     def ExtractSubtendedTerritory(self):
         SubtendedFlow = 0
         self.TerritoryTags = ""
+        NCells = 0
         for (key, item) in self.Labels.items():
             if self.args.TerritoryTag in key:
                 self.TerritoryTags += os.path.splitext(key)[0] + "+"
                 territory_ = ThresholdInBetween(self.MBF, "TerritoryMaps", int(item), int(item))
-                SubtendedFlow += self.CalculateFlowInVoluem(territory_)
+                flow_, nCells = self.CalculateFlowInVoluem(territory_)
+                SubtendedFlow += flow_
+                NCells += nCells
         
-        return SubtendedFlow
+        return SubtendedFlow/NCells
     
     def main(self):
-        SubtendedFlow = self.ExtractSubtendedTerritory()
-        print("Flow = ", int(SubtendedFlow*100)/100, "mL/min")
+        NormalizedSubtendedFlow = self.ExtractSubtendedTerritory()
+        print("Flow = ", int(NormalizedSubtendedFlow*100)/100, "mL/min")
         ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBF))[0]}_MBFxVolume_{self.args.TerritoryTag}.dat"
         with open(ofile_path, "w") as ofile:
             ofile.writelines("Territory Tags:\n")
             ofile.writelines(f"{self.TerritoryTags}\n")
-            ofile.writelines(f"Territory Flow: {int(SubtendedFlow*100)/100} mL/min")
+            ofile.writelines(f"Territory Flow: {int(NormalizedSubtendedFlow*100)/100} mL/min")
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
