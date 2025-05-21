@@ -57,16 +57,16 @@ class ExtractSubtendedFlow():
     def main(self):
         SubtendedFlow, NCells = self.ExtractSubtendedTerritory()
         NormalizedSubtendedFlow = SubtendedFlow/NCells
-        print("Territory Flow = ", SubtendedFlow, "mL/min")
+        print("Territory Flow = ", int(SubtendedFlow*1000)/1000, "mL/min")
         print("Number of Cells per territory: ", NCells)
-        print("Normalized Flow = ", NormalizedSubtendedFlow, "$\u00b5$L/min/Voxel")
+        print("Normalized Flow = ", int(NormalizedSubtendedFlow*1000*1000)/1000, "\u00b5L/min/Voxel")
         ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBF))[0]}_MBFxVolume_{self.args.TerritoryTag}.dat"
         with open(ofile_path, "w") as ofile:
             ofile.writelines("Territory Tags:\n")
             ofile.writelines(f"{self.TerritoryTags}\n")
-            ofile.writelines(f"Territory Flow: {SubtendedFlow} mL/min\n")
+            ofile.writelines(f"Territory Flow: {int(SubtendedFlow*1000)/1000} mL/min\n")
             ofile.writelines(f"Number of voxels in territory: {NCells}")
-            ofile.writelines(f"Flow per voxel: {NormalizedSubtendedFlow*1000} $\u00b5$L/min/Voxel")
+            ofile.writelines(f"Flow per voxel: {int(NormalizedSubtendedFlow*1000*1000)/1000} \u00b5L/min/Voxel")
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
