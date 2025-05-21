@@ -3,14 +3,16 @@ import vtk
 import numpy as np
 import argparse
 from utilities import ReadVTUFile, ThresholdInBetween
+from NormalizeMBFMap import MBFNormalization
 
 class ExtractSubtendedFlow():
     def __init__(self, args):
+        args.InputFolder = ""
+        args.InputLabels = f"{os.path.splitext(args.InputMBF)[0]}_Labels.dat"
         self.MBF = ReadVTUFile(args.InputMBF)
         self.args = args
-        labels = f"{os.path.splitext(self.args.InputMBF)[0]}_Labels.dat"
         self.Labels = {}
-        with open(labels, "r") as ifile:
+        with open(args.InputLabels, "r") as ifile:
             for LINE in ifile:
                 line = LINE.split()
                 self.Labels[line[1]] = line[0]
@@ -30,8 +32,8 @@ class ExtractSubtendedFlow():
         elif self.args.Unit == 'cm':
             return average_cell_mbf/id_list.GetNumberOfIds()*cell_volume/100
 
-    def CalculateFlowInVoluem(self, Volume):
-        MBFScalarArray = Volume.GetPointData().GetArray(self.args.ArrayName)
+    def CalculateFlowInVoluem(self, Volume, ArrayName):
+        MBFScalarArray = Volume.GetPointData().GetArray(ArrayName)
         NCells = Volume.GetNumberOfCells()
         Flow = 0
         for i in range(NCells):
@@ -40,33 +42,52 @@ class ExtractSubtendedFlow():
         
         return Flow, NCells
     
-    def ExtractSubtendedTerritory(self):
+    def ExtractSubtendedTerritory(self, MBF, ArrayName):
         SubtendedFlow = 0
         self.TerritoryTags = ""
         NCells = 0
         for (key, item) in self.Labels.items():
             if self.args.TerritoryTag in key:
                 self.TerritoryTags += os.path.splitext(key)[0] + "+"
-                territory_ = ThresholdInBetween(self.MBF, "TerritoryMaps", int(item), int(item))
-                flow_, nCells = self.CalculateFlowInVoluem(territory_)
+                territory_ = ThresholdInBetween(MBF, "TerritoryMaps", int(item), int(item))
+                flow_, nCells = self.CalculateFlowInVoluem(territory_, ArrayName)
                 SubtendedFlow += flow_
                 NCells += nCells
         
         return SubtendedFlow, NCells
     
     def main(self):
-        SubtendedFlow, NCells = self.ExtractSubtendedTerritory()
+        SubtendedFlow, NCells = self.ExtractSubtendedTerritory(self.MBF, self.args.ArrayName)
         NormalizedSubtendedFlow = SubtendedFlow/NCells
-        print("Territory Flow = ", int(SubtendedFlow*1000)/1000, "mL/min")
+
+        IndexMBF = MBFNormalization(self.args).Normalize(self.MBF)
+        IndexFlow, _ = self.ExtractSubtendedTerritory(IndexMBF, "IndexMBF")
+        NormalizedIndexFlow = IndexFlow/NCells
+
         print("Number of Cells per territory: ", NCells)
+        print("--- MBF Flow:")
+        print("Territory Flow = ", int(SubtendedFlow*1000)/1000, "mL/min")
         print("Normalized Flow = ", int(NormalizedSubtendedFlow*1000*1000)/1000, "\u00b5L/min/Voxel")
+
+        print("--- Index MBF Flow:")
+        print("Territory Index Flow = ", int(IndexFlow*1000)/1000, "1/min")
+        print("Normalized Index Flow = ", int(NormalizedIndexFlow*1000000*1000)/1000, "\u00b5/min/Voxel")
+
         ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBF))[0]}_MBFxVolume_{self.args.TerritoryTag}.dat"
         with open(ofile_path, "w") as ofile:
             ofile.writelines("Territory Tags:\n")
             ofile.writelines(f"{self.TerritoryTags}\n")
+            ofile.writelines(f"Number of voxels in territory: {NCells}\n")
+            ofile.writelines("-"*10)
+            ofile.writelines("\n")
+            ofile.writelines("MBF Flow:\n")
             ofile.writelines(f"Territory Flow: {int(SubtendedFlow*1000)/1000} mL/min\n")
-            ofile.writelines(f"Number of voxels in territory: {NCells}")
-            ofile.writelines(f"Flow per voxel: {int(NormalizedSubtendedFlow*1000*1000)/1000} \u00b5L/min/Voxel")
+            ofile.writelines(f"Flow per Voxel: {int(NormalizedSubtendedFlow*1000*1000)/1000} \u00b5L/min/Voxel\n")
+            ofile.writelines("-"*10)
+            ofile.writelines("\n")
+            ofile.writelines("Index MBF Flow:\n")
+            ofile.writelines(f"Territory Index Flow: {int(IndexFlow*1000)/1000}  1/min\n")
+            ofile.writelines(f"Index Flow per Voxel: {int(NormalizedIndexFlow*1000000*1000)/1000} \u00b5/min/Voxel")
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
