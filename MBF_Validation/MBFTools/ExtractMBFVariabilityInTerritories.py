@@ -44,9 +44,6 @@ class PlotMBFVariabilityPerTerritory():
         
         return MBF_data, Territories
 
-    def BoxPlot(self):
-        pass
-
     def ConvertPointDataToCellData(self, pointdata):
         PointToCell = vtk.vtkPointDataToCellData()
         PointToCell.SetInputData(pointdata)
@@ -89,8 +86,19 @@ class PlotMBFVariabilityPerTerritory():
                     if line[1].find(key)>=0: Ischemic_Labels[key].append(int(line[0]))
 
         Ischemic_Labels = {k:v for k, v in Ischemic_Labels.items() if len(v)>0}
+        
+        return Ischemic_Labels
+    
+    def ViolinPlot(self, data):
+        pass
 
     def main(self):
+        # Extract Vessel Territories
+        # Extract Ischemic Territories
+        # Extract MBF data in each territory
+        # Convert pointdata MBF to celldata MBF
+        # Extract Flow in each territory
+        # 
         pass
 
 if __name__ == "__main__":
