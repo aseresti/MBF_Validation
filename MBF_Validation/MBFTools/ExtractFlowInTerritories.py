@@ -55,6 +55,24 @@ class ExtractSubtendedFlow():
                 NCells += nCells
         
         return SubtendedFlow, NCells
+    
+    def ThresholdInBetween(self, Volume,arrayname,value1,value2):
+        Threshold=vtk.vtkThreshold()
+        Threshold.SetInputData(Volume)
+        #Threshold.ThresholdBetween(value1,value2)
+        Threshold.SetLowerThreshold(value1)
+        Threshold.SetUpperThreshold(value2)
+        #Threshold.SetThresholdFunction(ThresholdInBetween)
+        Threshold.SetInputArrayToProcess(0,0,0,vtk.vtkDataObject.FIELD_ASSOCIATION_CELLS,arrayname)
+        Threshold.Update()
+        return Threshold.GetOutput()
+    
+    def ConvertPointDataToCellData(self, pointdata):
+        PointToCell = vtk.vtkPointDataToCellData()
+        PointToCell.SetInputData(pointdata)
+        PointToCell.Update()
+
+        return PointToCell.GetOutput()
 
     def CalculateCellDataFlow(self, Territory, ArrayName):
         CellData = Territory.GetCellData()
@@ -72,7 +90,7 @@ class ExtractSubtendedFlow():
         if self.args.Unit == 'mm':
             return np.array(TerritoryFlow)/1000/100, TerritoryVolume/1000, NCells
         elif self.args.Unit == 'cm':
-            return np.array(TerritoryFlow)/100, TerritoryVolume/1000, NCells
+            return np.array(TerritoryFlow)/100, TerritoryVolume, NCells
 
     def ExtractCellDataSubtendedTerritory(self, MBF, ArrayName):
         SubtendedFlow = 0
@@ -82,15 +100,16 @@ class ExtractSubtendedFlow():
         for (key, item) in self.Labels.items():
             if self.args.TerritoryTag in key:
                 self.TerritoryTags += os.path.splitext(key)[0] + "+"
-                territory_ = ThresholdInBetween(MBF, "TerritoryMaps", int(item), int(item))
+                territory_ = self.ThresholdInBetween(MBF, "TerritoryMaps", int(item), int(item))
                 flow_, volume_, nCells = self.CalculateCellDataFlow(territory_, ArrayName)
-                SubtendedFlow += flow_
+                SubtendedFlow += np.sum(flow_)
                 NCells += nCells
                 TerritoryVolume += volume_
         
         return SubtendedFlow, NCells, TerritoryVolume
 
     def main(self):
+        print(self.Labels)
         SubtendedFlow, NCells = self.ExtractSubtendedTerritory(self.MBF, self.args.ArrayName)
         NormalizedSubtendedFlow = SubtendedFlow/NCells
 
@@ -99,12 +118,12 @@ class ExtractSubtendedFlow():
         NormalizedIndexFlow = IndexFlow/NCells
 
         #CellData
-        SubtendedFlow2, NCells2, TerritoryVolume = self.ExtractCellDataSubtendedTerritory(IndexMBF, "IndexMBF")
+        SubtendedFlow2, NCells2, TerritoryVolume = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(self.MBF), "IndexMBF")
         NormalizedIndexFlow2 = SubtendedFlow2/NCells2
 
-        IndexFlow2, _, _ = self.ExtractCellDataSubtendedTerritory(IndexMBF, "IndexMBF")
+        IndexFlow2, _, _ = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(IndexMBF), "IndexMBF")
         NormalizedSubtendedFlow2 = IndexFlow2/NCells2
-
+        print(self.TerritoryTags)
         print("Number of Cells per territory: ", NCells, NCells2)
         print("--- MBF Flow:")
         print("----- Point Data:")
