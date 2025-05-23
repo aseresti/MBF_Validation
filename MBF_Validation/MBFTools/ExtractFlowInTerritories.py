@@ -109,7 +109,6 @@ class ExtractSubtendedFlow():
         return SubtendedFlow, NCells, TerritoryVolume
 
     def main(self):
-        print(self.Labels)
         SubtendedFlow, NCells = self.ExtractSubtendedTerritory(self.MBF, self.args.ArrayName)
         NormalizedSubtendedFlow = SubtendedFlow/NCells
 
@@ -118,11 +117,11 @@ class ExtractSubtendedFlow():
         NormalizedIndexFlow = IndexFlow/NCells
 
         #CellData
-        SubtendedFlow2, NCells2, TerritoryVolume = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(self.MBF), "IndexMBF")
-        NormalizedIndexFlow2 = SubtendedFlow2/NCells2
+        SubtendedFlow2, NCells2, TerritoryVolume = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(self.MBF), self.args.ArrayName)
+        NormalizedSubtendedFlow2 = SubtendedFlow2/NCells2
 
         IndexFlow2, _, _ = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(IndexMBF), "IndexMBF")
-        NormalizedSubtendedFlow2 = IndexFlow2/NCells2
+        NormalizedIndexFlow2 = IndexFlow2/NCells2
         print(self.TerritoryTags)
         print("Number of Cells per territory: ", NCells, NCells2)
         print("--- MBF Flow:")
@@ -135,6 +134,10 @@ class ExtractSubtendedFlow():
         print("Normalized Flow = ", int(NormalizedSubtendedFlow2*1000*1000)/1000, "\u00b5L/min/Voxel")
 
         print("--- Index MBF Flow:")
+        print("----- Point Data:")
+        print("Territory Index Flow = ", int(IndexFlow*1000)/1000, "1/min")
+        print("Normalized Index Flow = ", int(NormalizedIndexFlow*1000000*1000)/1000, "\u00b5/min/Voxel")
+        print("----- Cell Data:")
         print("Territory Index Flow = ", int(IndexFlow2*1000)/1000, "1/min")
         print("Normalized Index Flow = ", int(NormalizedIndexFlow2*1000000*1000)/1000, "\u00b5/min/Voxel")
 
