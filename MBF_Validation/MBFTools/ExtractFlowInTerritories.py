@@ -88,25 +88,27 @@ class ExtractSubtendedFlow():
             TerritoryVolume += cell_volume
 
         if self.args.Unit == 'mm':
-            return np.array(TerritoryFlow)/1000/100, TerritoryVolume/1000, NCells
+            return np.array(TerritoryFlow)/1000/100, TerritoryVolume/1000, NCells, ImageScalars
         elif self.args.Unit == 'cm':
-            return np.array(TerritoryFlow)/100, TerritoryVolume, NCells
+            return np.array(TerritoryFlow)/100, TerritoryVolume, NCells, ImageScalars
 
     def ExtractCellDataSubtendedTerritory(self, MBF, ArrayName):
         SubtendedFlow = 0
         self.TerritoryTags = ""
         NCells = 0
         TerritoryVolume = 0
+        MBFScalarArray = np.array([])
         for (key, item) in self.Labels.items():
             if self.args.TerritoryTag in key:
                 self.TerritoryTags += os.path.splitext(key)[0] + "+"
                 territory_ = self.ThresholdInBetween(MBF, "TerritoryMaps", int(item), int(item))
-                flow_, volume_, nCells = self.CalculateCellDataFlow(territory_, ArrayName)
+                flow_, volume_, nCells, scalararray = self.CalculateCellDataFlow(territory_, ArrayName)
                 SubtendedFlow += np.sum(flow_)
                 NCells += nCells
                 TerritoryVolume += volume_
+                MBFScalarArray = np.append(scalararray, MBFScalarArray)
         
-        return SubtendedFlow, NCells, TerritoryVolume
+        return SubtendedFlow, NCells, TerritoryVolume, MBFScalarArray
 
     def main(self):
         SubtendedFlow, NCells = self.ExtractSubtendedTerritory(self.MBF, self.args.ArrayName)
@@ -117,11 +119,12 @@ class ExtractSubtendedFlow():
         NormalizedIndexFlow = IndexFlow/NCells
 
         #CellData
-        SubtendedFlow2, NCells2, TerritoryVolume = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(self.MBF), self.args.ArrayName)
+        SubtendedFlow2, NCells2, TerritoryVolume, _ = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(self.MBF), self.args.ArrayName)
         NormalizedSubtendedFlow2 = SubtendedFlow2/NCells2
 
-        IndexFlow2, _, _ = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(IndexMBF), "IndexMBF")
+        IndexFlow2, _, _, IndexMBFArray = self.ExtractCellDataSubtendedTerritory(self.ConvertPointDataToCellData(IndexMBF), "IndexMBF")
         NormalizedIndexFlow2 = IndexFlow2/NCells2
+        NormalizedIndexMBF = np.mean(IndexMBFArray)
         print(self.TerritoryTags)
         print("Number of Cells per territory: ", NCells, NCells2)
         print("--- MBF Flow:")
@@ -140,6 +143,7 @@ class ExtractSubtendedFlow():
         print("----- Cell Data:")
         print("Territory Index Flow = ", int(IndexFlow2*1000)/1000, "1/min")
         print("Average Index Flow = ", int(NormalizedIndexFlow2*1000000*1000)/1000, "\u00b5/min/Voxel")
+        print("Average Index MBF = ", int(NormalizedIndexMBF*1000)/1000, "mL/min/100mL")
 
         ofile_path = f"./{os.path.splitext(os.path.basename(self.args.InputMBF))[0]}_MBFxVolume_{self.args.TerritoryTag}.dat"
         with open(ofile_path, "w") as ofile:
