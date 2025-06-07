@@ -148,7 +148,7 @@ if __name__=="__main__":
 	parser.add_argument('-ifile', '--InputFileName', type=str, required=True, dest="InputFileName",help="Volumetric Mesh that contains the Myocardial Blood Flow Data and Territory Maps")
 
 	#Option to strip off one endo- and one epi-cardial element
-	parser.add_argument('-Layers', '--Layers', type=float, required=True, default=1, dest="Layers", help="The Number of Layers to Shed of the Myocardium")	
+	parser.add_argument('-Layers', '--Layers', type=float, required=False, default=2, dest="Layers", help="The Number of Layers to Shed of the Myocardium")	
 
         #Array Name of the Data
 	parser.add_argument('-arrayname', '--ArrayName', type=str, required=False,default="ImageScalars", dest="ArrayName",help="The name of the array containing the MBF values")
